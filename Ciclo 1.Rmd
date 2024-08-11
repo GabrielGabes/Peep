@@ -1,0 +1,1508 @@
+```{r Carregamento e pré-processamento de dados}
+df <- read_excel("df.xlsx")
+#nrow(df)
+#glimpse(df)
+
+df$Grupo = as.factor(df$Grupo)
+
+# RETIRANDO COLUNAS DO TIPO DATA DO BANCO ####
+for (coluna in names(df)){
+  classe = class(df[[coluna]])[1]
+  if (classe == "POSIXct"){
+    df[[coluna]] = NULL
+  }
+  else {
+    df[[coluna]][df[[coluna]] == 'n/a'] = NA
+  }
+}
+
+# EXCLUINDO COLUNAS INUTEIS ####
+
+df$Nome = NULL
+df$atendimento = NULL
+df$NÚMERO = NULL
+df$Data_da_alta = NULL
+df$Outros = NULL
+df$Número_do_tubo_orotraqueal = NULL
+df$Observação = NULL
+df$Motivo_da_retorno_no_PS = NULL
+
+# alterando tipo de colunas ####
+
+df$Número_de_gestações = as.numeric(df$Número_de_gestações)
+df$Número_de_gestações = ifelse(df$Número_de_gestações >= 2, 1, 0) %>% as.factor()
+
+df$Qual_intercorrência = factor(df$Qual_intercorrência)
+#levels(df$Qual_intercorrência)
+df$Qual_intercorrência[df$Qual_intercorrência == 'vômitos'] = 'vômito'
+df$Qual_intercorrência[df$Qual_intercorrência == "dessaturação, tomografia com congestão e derrame pleural bilateral"] = 'dessaturação'
+
+df$FiO2_C = as.numeric(df$FiO2_C)
+df$`Dose_total_(mg)` = as.numeric(df$`Dose_total_(mg)`)
+df$Dose_da_medicação_de_resgate = as.numeric(df$Dose_da_medicação_de_resgate)
+df$ASA = df$ASA %>% as.factor()
+
+df$Pressão_de_Pico_antes_do_recrutamento_C[df$Pressão_de_Pico_antes_do_recrutamento_C == 2029] = 29
+
+# criando novas variaveis ####
+
+df$estado_nutri = NA_character_
+df$estado_nutri[df$IMC >= 30 & df$IMC < 35] = 'obesidade_1'
+df$estado_nutri[df$IMC >= 35 & df$IMC < 40] = 'obesidade_2'
+df$estado_nutri[df$IMC >= 40] = 'obesidade_3'
+
+df$idade_cat = NA_character_
+df$idade_cat[df$Idade <= 30] = '0_18a30'
+df$idade_cat[df$Idade > 30 & df$Idade <= 40] = '1_31a40'
+df$idade_cat[df$Idade > 40 & df$Idade <= 50] = '2_41a50'
+df$idade_cat[df$Idade > 50] = '3_51'
+
+df$delta_A_B = df$Driving_pressure_B - df$Driving_pressure_A
+df$delta_B_C = df$Driving_pressure_C - df$Driving_pressure_B
+df$delta_A_C = df$Driving_pressure_C - df$Driving_pressure_A
+
+# corte 90
+df$Sat_entrada_90 = ifelse(df$Sat_entrada >= 90, 1, 0) %>% as.factor()
+df$Saturação_A_90 = ifelse(df$Saturação_A >= 90, 1, 0) %>% as.factor()
+df$Saturação_B_90 = ifelse(df$Saturação_B >= 90, 1, 0) %>% as.factor()
+df$Saturação_C_90 = ifelse(df$Saturação_C >= 90, 1, 0) %>% as.factor()
+df$Saturação_12_horas_após_a_cirurgia_90 = ifelse(df$Saturação_12_horas_após_a_cirurgia >= 90, 1, 0) %>% as.factor()
+df$Saturação_30_minutos_após_a_extubacao_90 = ifelse(df$Saturação_30_minutos_após_a_extubação >= 90, 1, 0) %>% as.factor()
+df$Saturação_06_após_a_cirurgia_90 = ifelse(df$Saturação_06_após_a_cirurgia >= 90, 1, 0) %>% as.factor()
+
+# corte 92
+df$Sat_entrada_92 = ifelse(df$Sat_entrada >= 92, 1, 0) %>% as.factor()
+df$Saturação_A_92 = ifelse(df$Saturação_A >= 92, 1, 0) %>% as.factor()
+df$Saturação_B_92 = ifelse(df$Saturação_B >= 92, 1, 0) %>% as.factor()
+df$Saturação_C_92 = ifelse(df$Saturação_C >= 92, 1, 0) %>% as.factor()
+df$Saturação_12_horas_após_a_cirurgia_92 = ifelse(df$Saturação_12_horas_após_a_cirurgia >= 92, 1, 0) %>% as.factor()
+df$Saturação_30_minutos_após_a_extubacao_cat_92 = ifelse(df$Saturação_30_minutos_após_a_extubação >= 92, 1, 0) %>% as.factor()
+df$Saturação_06_após_a_cirurgia_92 = ifelse(df$Saturação_06_após_a_cirurgia >= 92, 1, 0) %>% as.factor()
+
+# corte 13
+df$Driving_pressure_A_13 = ifelse(df$Driving_pressure_A >= 13, 1, 0) %>% factor()
+df$Driving_pressure_B_13 = ifelse(df$Driving_pressure_B >= 13, 1, 0) %>% factor()
+df$Driving_pressure_C_13 = ifelse(df$Driving_pressure_C >= 13, 1, 0) %>% factor()
+df$Driving_pressure_antes_do_recrutamento_B_13 = ifelse(df$Driving_pressure_antes_do_recrutamento_B >= 13, 1, 0) %>% factor()
+df$Driving_pressure_antes_do_recrutamento_C_13 = ifelse(df$Driving_pressure_antes_do_recrutamento_C >= 13, 1, 0) %>% factor()
+
+# corte 15
+df$Driving_pressure_A_15 = ifelse(df$Driving_pressure_A >= 15, 1, 0) %>% factor()
+df$Driving_pressure_B_15 = ifelse(df$Driving_pressure_B >= 15, 1, 0) %>% factor()
+df$Driving_pressure_C_15 = ifelse(df$Driving_pressure_C >= 15, 1, 0) %>% factor()
+df$Driving_pressure_antes_do_recrutamento_B_15 = ifelse(df$Driving_pressure_antes_do_recrutamento_B >= 15, 1, 0) %>% factor()
+df$Driving_pressure_antes_do_recrutamento_C_15 = ifelse(df$Driving_pressure_antes_do_recrutamento_C >= 15, 1, 0) %>% factor()
+
+# arrumando ordenação dos niveis ####
+
+df$Idade_50 = factor(df$Idade_50, levels=c('menor ou igual a 50','de 51 a 80'))
+
+df$Duração_da_cirurgia_cat = factor(df$Duração_da_cirurgia_cat, 
+                                     levels=c('menor que 2 horas','de 2 a 3 horas','maior que 3 horas'))
+
+df$Risco_pelo_STOP_BANG = factor(df$Risco_pelo_STOP_BANG, 
+                                 levels=c('Baixo risco','Intermediário','alto'))
+
+# variaveis problematicas
+
+colunas_problematicas = c('Volume_corrente_ao_final_do_recrutamento_A',
+                           'Volume_corrente_ao_final_do_recrutamento_B',
+                           'Volume_corrente_ao_final_do_recrutamento_C',
+                           'Infecção','Hb_menor_que_10','Local_da_incisão',
+                           'Emergência','cirugia_para_apneia')
+                          #"PEEP_ideal_A","PEEP_ideal_B","PEEP_ideal_C")
+
+df$Volume_corrente_ao_final_do_recrutamento_A = df$Volume_corrente_ao_final_do_recrutamento_A %>% as.numeric()
+df$Volume_corrente_ao_final_do_recrutamento_B = df$Volume_corrente_ao_final_do_recrutamento_B %>% as.numeric()
+df$Volume_corrente_ao_final_do_recrutamento_C = df$Volume_corrente_ao_final_do_recrutamento_C %>% as.numeric()
+
+# checando os niveis de cada colunas ####
+continuar = 0
+for (coluna in names(df)){
+  classe = class(df[[coluna]])
+  if (classe != "numeric"){
+    #print(paste0(coluna, '-> ', paste0(levels(as.factor(df[[coluna]])),collapse="','")))
+    continuar = 1
+  }
+}
+
+# checando colunas de apenas um nivel ####
+for (coluna in names(df)){
+  classe = class(df[[coluna]])
+  if (classe != "numeric"){
+    quantidade_de_niveis = df[[coluna]] %>% as.factor() %>% levels() %>% length()
+    if (quantidade_de_niveis <= 1){
+      #print(coluna)
+      #df[[coluna]] = NULL
+      if (!(coluna %in% colunas_problematicas)){
+        colunas_problematicas = append(coluna, colunas_problematicas)
+      }
+    }
+  }
+}
+
+df_back_up = df
+```
+
+
+```{r}
+df$`Dose_total_(mg)2` = df$`Dose_total_(mg)2` %>% as.numeric()
+summary_numerico_por_grupo_n_parametrico(df, 'Dose_total_(mg)2', 'Grupo')
+
+summary_numerico_por_grupo_parametrico(df, 'PEEP_ideal_C', 'Grupo') %>% capture()
+```
+
+# Analise Univariada
+
+```{r Colunas para analise univariada}
+lista_colunas_ordenadas = c('Idade',
+'idade_cat',
+'Gênero',
+'peso',
+'altura',
+'IMC',
+'estado_nutri',
+'Saturação',
+'Duração_da_cirurgia',
+'Duração_da_cirurgia_cat',
+'ARISCAT',
+'Risco_pelo_ARISCAT',
+'Maior_peso_da_vida',
+'Peso_ideal',
+'Volume_corrente',
+'Diferença_peso_real_peso_predito',
+'Perda_de_peso',
+'ASA',
+'HAS',
+'DPOC',
+'ASMA',
+'DM',
+'Pré_DM',
+'Tabagismo',
+'Dislipidemia',
+'Depressão',
+'Hipotireoidismo',
+'Gestações_anteriores',
+'Número_de_gestações',
+'Diagnóstico_de_apneia',
+'Tipo_de_cirurgia',
+'Robótica',
+'PAS_entrada',
+'PAD_entrada',
+'PAM_entrada',
+'Risco_pelo_STOP_BANG',
+'STOP_BANG',
+'RONCO',
+'CANSAÇO_DIURNO',
+'APNEIA_OBSERVADA',
+'HAS',
+'Circunferência_cervical_maior_que_43_para_homes_e_41_para_mulheres',
+'Circunferência_cervical_em_cm',
+'Gênero_masculino',
+'Maior_score_de_dor_na_RPA',
+'Uso_de_medicação_de_resgate',
+'Medicação_de_resgate',
+'Dose_da_medicação_de_resgate',
+'Via_aérea_difícil',
+'FC_entrada',
+'Sat_entrada',
+'Relação_Sat/FiO2',
+'Platô_A',
+'Pressão_de_pico_A',
+'Driving_pressure_A',
+'Driving_pressure_A_13',
+'Driving_pressure_A_15',
+'PAS_A',
+'PAD_A',
+'PAM_A',
+'FC_A',
+'Saturação_A',
+'FiO2_A',
+'Relação_Sat/FiO2_A',
+'ETCO2_A',
+'Vasopressor',
+'Driving_pressure_antes_do_recrutamento_B',
+'Pressão_de_Pico_antes_do_recrutamento_B',
+'Frequência_respiratória_antes_do_recrutamento_B',
+'Platô_B',
+'Pressão_de_pico_B',
+'Driving_pressure_B',
+'Driving_pressure_antes_do_recrutamento_B_13',
+'Driving_pressure_antes_do_recrutamento_B_15',
+'Driving_pressure_B_13',
+'Driving_pressure_B_15',
+'PAS_B',
+'PAD_B',
+'PAM_B',
+'FC_B',
+'Saturação_B',
+'Saturação_B_90',
+'Saturação_B_92',
+'FiO2_B',
+'Relação_Sat/FiO2_B',
+'ETCO2_B',
+'Pressão_de_peneumo_B',
+'Vasopressor_B',
+'Driving_pressure_antes_do_recrutamento_C',
+'Driving_pressure_antes_do_recrutamento_C_13',
+'Driving_pressure_antes_do_recrutamento_C_15',
+'Pressão_de_Pico_antes_do_recrutamento_C',
+'Frequência_respiratória_C',
+'Platô_C',
+'Pressão_de_pico_C',
+'Driving_pressure_C',
+'Driving_pressure_C_13',
+'Driving_pressure_C_15',
+'PAS_C',
+'PAD_C',
+'PAM_C',
+'FC_C',
+'Saturação_C',
+'FiO2_C',
+'Relação_Sat/FiO2_C',
+'ETCO2_C',
+'Vasopressor_C',
+'Uso_de_vasopressor_no_intraoperatório',
+'metaraminol',
+'Dose_total_(mg)',
+'Efedrina',
+'Dose_total_(mg)2',
+'Número_de_espisódios_de_hipotensão',
+'Volume_total_de_cristaloide_infundido',
+'Encaminhado_a_RPA_com_oxigênio',
+'Instalado_cateter_de_oxigênio_na_RPA',
+'Utilizou_oxigênio_na_RPA',
+'Saturação_30_minutos_após_a_extubação',
+'Saturação_30_minutos_após_a_extubacao_90',
+'Saturação_30_minutos_após_a_extubacao_cat_92',
+'Relação_Sat/FiO2_RPA',
+'Alta_da_RPA_com_oxigênio',
+'Uso_de_oxigênio_na_unidade_de_internação',
+'Saturação_06_após_a_cirurgia',
+'Saturação_06_após_a_cirurgia_92',
+'Saturação_12_horas_após_a_cirurgia',
+'Saturação_12_horas_após_a_cirurgia_92',
+'Intercorrências_durante_a_internação',
+'Qual_intercorrência',
+'Complicação_respiratória_na_internação',
+'Retrono_no_PS',
+'Retorno_no_PS_por_complicação_cirúrgica',
+'Retorno_no_PS_por_dor',
+'Retrono_por_TVP/TEP',
+'Reinternação',
+'Nausea_na_RPA',
+'Nausea_e_vômito_na_unidade_de_internação',
+'Nausea_e_vômitos_(RPA_e_internação)',
+'Complacência_estática_A',
+'Complacência_estática_pré_B',
+'Complacência_estática_B',
+'Complacência_estática_pré_C',
+'Complacência_estática_C',
+'Comlacência_dinâmica_A',
+'Comlacência_dinâmica_pré_B',
+'Comlacência_dinâmica_B',
+'Comlacência_dinâmica_pré_C',
+'Comlacência_dinâmica_C',
+'Complicacao_pulmonar')
+```
+
+
+```{r tabela de analise univariada por grupo}
+coluna_analisada = 'Grupo'
+lista_coluna = names(df)[which(!(names(df) %in% c(append(coluna_analisada,colunas_problematicas))))]
+#[-which(names(df)==coluna_analisada)]
+
+tabelona = summary_numerico_por_grupo_n_parametrico(df, "altura", coluna_analisada)[FALSE, ]
+
+for (coluna in lista_colunas_ordenadas){
+  classe = class(df[[coluna]])[1]
+  if (!(coluna %in% names(df))){
+    print(paste0('******',coluna,'******'))
+  }
+  if (classe == "numeric"){
+    if (normalidade_por_grupo_criterio(df, coluna, coluna_analisada) == TRUE){
+      tabelinha = summary_numerico_por_grupo_parametrico(df, coluna, coluna_analisada)
+    }
+    else{
+      tabelinha = summary_numerico_por_grupo_n_parametrico(df, coluna, coluna_analisada)
+    }
+  }
+  else if (classe == 'character' | classe == 'factor'){
+    tabelinha = conti(df, coluna_analisada, coluna, "col")
+  }
+  tabelona = rbind(tabelona, tabelinha)
+}
+colnames(tabelona)[colnames(tabelona) == "Overall"] = paste0("Overall (n=", nrow(df[complete.cases(df[[coluna_analisada]]), ]), ")")
+niveis = levels(as.factor(df[[coluna_analisada]]))
+for (i in 1:length(niveis)){
+  nivel = niveis[i]
+  colnames(tabelona)[colnames(tabelona) == nivel] = paste0(nivel, " (n=", table(df[[coluna_analisada]])[i], ")")}
+
+tabelona %>% capture()
+```
+
+# Post-hoc
+
+```{r Capturando os nomes de quais variaveis foram significativas}
+cols_signif = c()
+cols_signif_n_param = c()
+cols_signif_param = c()
+
+for (coluna in lista_colunas_ordenadas){
+  classe = class(df[[coluna]])
+  if (classe == "numeric"){
+    len_levels = df[[coluna]] %>% as.factor() %>% levels() %>% length()
+    if (len_levels > 2){
+      if (normalidade_por_grupo_criterio(df, coluna, coluna_analisada) == TRUE){
+        p_valor = summary(aov(df[[coluna]]~df[[coluna_analisada]]))[[1]][["Pr(>F)"]][1]
+        if (p_valor < 0.05){
+          cols_signif_param = append(cols_signif_param, coluna)
+          cols_signif = append(cols_signif, coluna)
+          }}
+      else{
+        p_valor = kruskal.test(df[[coluna]]~df[[coluna_analisada]])$p.value
+        if (p_valor < 0.05){
+          cols_signif_n_param = append(cols_signif_n_param, coluna)
+          cols_signif = append(cols_signif, coluna)
+          }}
+    }
+  }    }
+
+print(cols_signif_n_param)
+print("**********************************************")
+print(cols_signif_param)
+
+```
+
+
+```{r Boxplot das variaveis numéricas (Grupo vs var_nums)}
+col_cat = 'Grupo'
+
+for (col_num in cols_signif){
+
+  amplitude = max(df[[col_num]]) - min(df[[col_num]])
+  if (amplitude < 10){
+    if (amplitude <= 1){
+      pulo = amplitude/10
+    }else{
+      pulo = as.integer((max(df[[col_num]],na.rm = T) - min(df[[col_num]],na.rm = T))/5)
+    }
+  }else{
+    pulo = as.integer((max(df[[col_num]],na.rm = T) - min(df[[col_num]],na.rm = T))/10)
+  }
+  
+  ggplot(df, aes(x=as.factor(!!sym(col_cat)), y=!!sym(col_num), fill=as.factor(!!sym(col_cat)))) + 
+      # Graficos
+      geom_jitter(alpha=0.5, show.legend=F, size=2.5, position=position_jitter(0.25)) +
+      geom_violin(alpha=0.2, show.legend=F, fill='white') +
+      geom_boxplot(alpha=0.8, show.legend=F, width=0.5) + #outlier.shape = NA
+      # Medias extras
+      geom_errorbar(stat = "summary", fun.data = "mean_se", width= 0.3, color="white") + 
+      geom_point(stat = "summary", fun = "mean", show.legend=F, color="red", size=2) +
+      # Outros
+      theme_bw() + theme(legend.position = "bottom") +
+      labs(x='Groups', y=col_num, title=NULL) +
+      scale_y_continuous(breaks=seq(from = 0, 
+                                    to = max(df[[col_num]],na.rm = T), 
+                                    by = pulo),
+                         limits = c(min(df[[col_num]],na.rm = T), max(df[[col_num]],na.rm = T)))
+  
+  ggsave(paste0('boxplot_',gsub("/", "_", col_num),".png"), height=15, width=20, units="cm", dpi= 600)
+}
+
+```
+
+
+```{r Aplicando Pós Hoc var_nums}
+
+valores_p_pos_teste = data.frame(coluna= character(), A_B = character(), A_C = character(), B_C = character(), Test_Used = character())
+
+for (coluna in cols_signif_param){
+  # TESTE DE TUKEY
+  teste = aov(df[[coluna]]~Grupo, data=df)
+  tabela = TukeyHSD(teste)
+  
+  p_ab = tabela$Grupo[10] %>% retorne_p()
+  p_ac = tabela$Grupo[11] %>% retorne_p()
+  p_bc = tabela$Grupo[12] %>% retorne_p()
+  
+  valores_p_pos_teste[nrow(valores_p_pos_teste)+1,] = c(coluna, p_ab, p_ac, p_bc, 'Tuskey')
+}
+valores_p_pos_teste %>% print() #%>% capture()
+
+####################################################################################################
+
+#valores_p_pos_teste = data.frame(coluna= character(), A_B = character(), A_C = character(), B_C = character())
+library(dunn.test)
+
+for (coluna in cols_signif_n_param){ #cols_signif
+  # TESTE DE DUNN
+  pos_teste = dunn.test(df[[coluna]], df$Grupo, method="bonferroni")
+  tabela = pos_teste$P.adjusted
+  p_ab = tabela[1] %>% retorne_p()
+  p_bc = tabela[3] %>% retorne_p()
+  p_ac = tabela[2] %>% retorne_p()
+  
+  valores_p_pos_teste[nrow(valores_p_pos_teste)+1,] = c(coluna, p_ab, p_ac, p_bc, 'Dunn')
+}
+valores_p_pos_teste %>% print() #%>% capture()
+
+```
+
+
+```{r Pós hoc var_cats}
+
+cols_signif_cats = c()
+
+for (coluna in lista_coluna) {
+  classe = class(df[[coluna]])[1] 
+  
+  if (classe != "numeric") {
+    
+    tabela = table(df[[coluna]], df$Grupo)
+    
+  
+    if (fisher_criterio(df, 'Grupo', coluna)) {
+      p_value = fisher.test(tabela)$p.value
+    } else {
+      p_value = chisq.test(tabela)$p.value
+    }
+    
+    if (!is.nan(p_value)){ if (p_value < 0.05) { cols_signif_cats = append(cols_signif_cats, coluna) }}
+  }
+}
+
+cols_signif_cats
+
+```
+
+
+```{r tabelas com os post hoc em variaveis categoricas}
+valores_p_pos_teste = data.frame(coluna= character(), A_B = character(), A_C = character(), B_C = character())
+
+for (coluna in cols_signif_cats){
+  print(coluna)
+  # versão 1
+  # glm_model = glm(df[[coluna]] ~ Grupo, family = binomial, data = df)
+  # comp = glht(glm_model, linfct = mcp(Grupo = "Tukey"))
+  # tabela = summary(comp)
+  # ##comp %>% confint()
+  # p_values = tabela[["test"]][["pvalues"]]
+  ######################################
+  
+  # versão 2 
+  teste = aov(as.numeric(df[[coluna]]) ~ Grupo, data = df) 
+  #teste %>% summary()
+  tabela = teste %>% TukeyHSD()
+  tabela = tabela$Grupo %>% as.data.frame()
+  p_values = tabela$`p adj`
+  ######################################
+  
+  p_ab = p_values[1] %>% retorne_p()
+  p_ac = p_values[2] %>% retorne_p()
+  p_bc = p_values[3] %>% retorne_p()
+  
+  valores_p_pos_teste[nrow(valores_p_pos_teste)+1,] = c(coluna, p_ab, p_ac, p_bc)
+}
+valores_p_pos_teste %>% capture()
+```
+
+# Investigando relação do IMC com variaveis númericas
+
+```{r Tabelas de correlação linear de todas variaveis vs IMC}
+
+dff = df
+#dff = df %>% filter(Grupo == 'A')
+#dff = df %>% filter(Grupo == 'B')
+dff = df %>% filter(Grupo == 'C')
+
+colunas_GERAL_e_A = names(dff)[sapply(dff, is.numeric) & names(dff) != "IMC"]
+colunas_B = colunas[-which(colunas==c('PEEP_ideal_A','PEEP_ideal_C'))] #B 
+colunas_C = colunas[-which((colunas %in% c('Volume_corrente_ao_final_do_recrutamento_A','PEEP_ideal_A','Volume_corrente_ao_final_do_recrutamento_B','PEEP_ideal_B','Volume_corrente_ao_final_do_recrutamento_C','PEEP_ideal_C')))] #C
+
+fd = data.frame(coluna = as.character(), cor = as.numeric(), p = as.character(),
+                p_lm = as.numeric(), rs = as.character(), rs_ajust = as.character())
+
+for (coluna in colunas_GERAL_e_A){
+  ####################################################
+  #Correlação 
+  teste <- cor.test(dff[[coluna]], dff$IMC, method = "spearman")
+  Correlacao = teste$estimate %>% rround(2)
+  ValorP = teste$p.value %>% retorne_p()
+  
+   ####################################################
+  #Regressão Linear
+  summary_LM <- lm(dff$IMC ~ dff[[coluna]]) %>% summary()
+  p_value <- summary_LM$coefficients["dff[[coluna]]", "Pr(>|t|)"] %>% retorne_p()
+  
+  # R-quadrado (R²)
+  r_squared <- summary_LM$r.squared %>% rround(2)
+  
+  # R-quadrado ajustado
+  r_squared_adj <- summary_LM$adj.r.squared %>% rround(2)
+  
+  fd[nrow(fd)+1,] = c(coluna, Correlacao, ValorP, 
+                   p_value, r_squared, r_squared_adj)
+  
+  ####################################################
+  # P = ggplot(df, aes(x = dff$IMC, y=dff[[coluna]], color=df$Grupo)) + 
+  #   geom_point(alpha=0.5, size=2.5) + geom_smooth(method = 'lm') +
+  #   labs(x="BMI (kg/m²)", y=coluna, title='') + 
+  #   theme(legend.position = "bottom") + theme_bw() +
+  #   scale_x_continuous(limits = c(33, 49), breaks=seq(from = 1, to = 100, by = 1))
+  # print(P)
+    
+}
+
+fd %>% capture()
+
+######################################################################################
+
+# ggplot(df, aes(x = df$IMC, y=df$Driving_pressure_A, color=df$Grupo)) +
+#   geom_point(alpha=0.5, size=2.5) + geom_smooth(method = 'lm') +
+#   labs(x="BMI (kg/m²)", y='variavel', title='') +
+#   theme(legend.position = "bottom") + theme_bw() +
+#   scale_x_continuous(limits = c(33, 49), breaks=seq(from = 1, to = 100, by = 1))
+# ggsave("SAULOO.png", height=10, width=15, units="cm", dpi= 600)
+# 
+# # GERAL ################################
+# cor(df[sapply(df, is.numeric)], df$IMC,method = "spearman") %>% print() %>% write_clip(dec = ",", col.names = TRUE)
+# # A ####################################
+# df_filter = df %>% filter(Grupo == 'A')
+# cor(df_filter[sapply(df_filter, is.numeric)], df_filter$IMC,method = "spearman") %>% print() %>%write_clip(dec = ",", col.names = TRUE)
+# # B ####################################
+# df_filter = df %>% filter(Grupo == 'B')
+# cor(df_filter[sapply(df_filter, is.numeric)], df_filter$IMC,method = "spearman") %>% print() %>%write_clip(dec = ",", col.names = TRUE)
+# # C ####################################
+# df_filter = df %>% filter(Grupo == 'C')
+# cor(df_filter[sapply(df_filter, is.numeric)], df_filter$IMC,method = "spearman") %>% print() %>%write_clip(dec = ",", col.names = TRUE)
+
+######################################################################################
+
+# Grafico de correleção
+df_filter = df %>% filter(Grupo == 'A')
+df_filter$id = 1:nrow(df_filter)
+lista_vars = c("PEEP_ideal_A","PEEP_ideal_B","PEEP_ideal_C",'Grupo','IMC','id')
+
+dados_long <- pivot_longer(df_filter[,lista_vars], cols = starts_with('PEEP_ideal'), 
+                           names_to = "Momentos", values_to = "PEEP")
+dados_long$Momentos = factor(dados_long$Momentos, labels = c('A','B','C'))
+dados_long
+dados_long$IMC %>% summary()
+
+ggplot(dados_long, aes(x=IMC, y=PEEP, color='#f8766d')) +
+  geom_point(alpha=0.5, size=2.5) + geom_smooth(method='lm') +
+  theme_classic() + theme(legend.position = "none") +
+  facet_grid(~Momentos) +
+  labs(x='BMI (kg/m²)', y='Ideal Peep') +
+  scale_y_continuous(limits = c(5, 20), breaks=seq(from = 5, to = 20, by = 2.5)) + 
+  scale_x_continuous(limits = c(34, 48), breaks=seq(from = 34, to = 48, by = 2))
+ggsave(paste0('IMC_vs_Peep',".png"), height=10, width=15, units="cm", dpi=600)
+
+##############################
+library(lmerTest)
+modelo = lmer(PEEP~IMC + Momentos + (1|id), data=dados_long)
+modelo2 = lmer(PEEP ~ IMC + Momentos + IMC_cat*Momentos + (1|id), data=dados_long)
+anova(modelo, modelo2)
+modelo %>% summary()
+
+##############################
+cor.test(df_filter$IMC, df_filter$PEEP_ideal_A, method = 'spearman')
+cor.test(df_filter$IMC, df_filter$PEEP_ideal_B, method = 'spearman')
+cor.test(df_filter$IMC, df_filter$PEEP_ideal_C, method = 'spearman')
+
+##############################
+
+dados_long$IMC_cat = NA
+dados_long$IMC_cat[dados_long$IMC < 35] = '0. < 35'
+dados_long$IMC_cat[dados_long$IMC >= 35 & dados_long$IMC < 40] = '1. >= 35 e < 40'
+dados_long$IMC_cat[dados_long$IMC >= 40 & dados_long$IMC < 45] = '2. >= 40 e < 45'
+dados_long$IMC_cat[dados_long$IMC >= 45] = '3. >= 45'
+dados_long$IMC_cat = factor(dados_long$IMC_cat, labels=c('BMI < 35','35 ≤ BMI < 40','40 ≤ BMI < 45','BMI ≥ 45'))
+table(dados_long$IMC_cat)
+
+dados_long$PEEP %>% summary()
+
+ggplot(data=dados_long, aes(x=as.factor(Momentos), y=PEEP, color='#f8766d')) +
+  geom_boxplot(alpha=0.5, fill = 'white', show.legend = F) +
+  geom_point(alpha=0.5, size=2.5, show.legend = F) + 
+  geom_line(aes(group = id),alpha=0.5, show.legend = F) +
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width= 0.2, color="red") +
+  geom_point(stat = "summary", fun = "mean", show.legend=F, shape=21, fill='red', color="black", size=1) +
+  labs(x=NULL, y=NULL, title=NULL) + 
+  theme(legend.position = "none") + theme_classic() + 
+  facet_wrap(~IMC_cat, ncol = 2) + #scale_color_brewer(palette = "Dark2")
+  scale_y_continuous(limits = c(5, 20), breaks=seq(from = 5, to = 20, by = 2.5))
+ggsave(paste0('IMC_cat_vs_Peep',".png"), height=12, width=10, units="cm", dpi=600)
+
+modelo = lmer(PEEP ~ IMC_cat + Momentos + (1|id), data=dados_long)
+modelo2 = lmer(PEEP ~ IMC_cat + Momentos + IMC_cat*Momentos + (1|id), data=dados_long)
+anova(modelo, modelo2)
+
+metricas_de_avaliacao_regressao(dados_long, modelo, 'PEEP')
+metricas_de_avaliacao_regressao(dados_long, modelo2, 'PEEP')
+
+modelo %>% summary()
+modelo2 %>% summary()
+
+anova(modelo) %>% pander()
+anova(modelo2) %>% pander()
+
+```
+
+```{r}
+# Grafico
+
+```
+
+# Desenvolvimento  das variaveis numericas durante o tempo
+
+
+```{r Analise das médias}
+
+analise = 'Plato'
+
+#lista = c('Platô_A','Platô_B','Platô_C')
+
+lista = c('Platô_A','Pressão_de_Plato_antes_do_recrutamento_B','Platô_B','Pressão_de_Plato_antes_do_recrutamento_C','Platô_C')
+#lista = c('PEEP_ideal_A','PEEP_ideal_B','PEEP_ideal_C')
+# lista = c("Driving_pressure_A",
+#           "Driving_pressure_antes_do_recrutamento_B",
+#           "Driving_pressure_B",
+#           "Driving_pressure_antes_do_recrutamento_C",
+#           "Driving_pressure_C")
+# #################
+# #lista = c('PEEP_ideal_A', 'PEEP_ideal_B', 'PEEP_ideal_C')
+#################
+# lista = c('Pressão_de_pico_A',
+# 'Pressão_de_Pico_antes_do_recrutamento_B',
+# 'Pressão_de_pico_B',
+# 'Pressão_de_Pico_antes_do_recrutamento_C',
+# 'Pressão_de_pico_C')
+# #################
+# lista = c('Complacência_estática_A',
+# 'Complacência_estática_pré_B',
+# 'Complacência_estática_B',
+# 'Complacência_estática_pré_C',
+# 'Complacência_estática_C')
+# #################
+# lista = c('Comlacência_dinâmica_A',
+# 'Comlacência_dinâmica_pré_B',
+# 'Comlacência_dinâmica_B',
+# 'Comlacência_dinâmica_pré_C',
+# 'Comlacência_dinâmica_C')
+
+###################################################
+
+dff = df #%>% filter(Grupo == 'A')
+dff$Grupo = droplevels(dff$Grupo)
+
+fd = data.frame(ID = character(0), 
+                NUMS = character(0),
+                tempo = character(0),
+                Grupo = character(0))
+
+
+niveis_x = sapply( lista, function(x) if (!is.na(x)) gsub("_", " ", x) else NA)
+niveis_x = sapply( niveis_x, function(x) if (!is.na(x)) adicionar_quebra_de_linha(x, 35) else NA)
+
+for (coluna in lista){
+  fdzinho = cbind(1:nrow(dff), dff[[coluna]], coluna, dff$Grupo)
+  fd = rbind(fd, fdzinho)
+}
+
+fd <- fd %>% rename("ID" = "V1",
+                    "NUMS" = "V2",
+                    "Grupo" = "V4")
+
+fd$NUMS = as.numeric(fd$NUMS)
+fd$coluna = factor(fd$coluna, levels = lista)
+
+fd$Grupo = factor(fd$Grupo, labels = dff$Grupo %>% levels())
+
+##################################################################
+
+# ggplot() +
+#   geom_point(data=fd, aes(x=as.factor(coluna), y=NUMS, color=as.factor(coluna)), alpha=0.5, size=2.5, show.legend = F) + 
+#   geom_boxplot(data=fd, aes(x=as.factor(coluna), y=NUMS, color=as.factor(coluna)), alpha=0.5, fill = 'white', show.legend = F) +
+#   geom_line(data=fd, aes(x=as.factor(coluna), y=NUMS, color=as.factor(coluna), group = ID), show.legend = F, alpha=0.4) +
+#   labs(x=NULL, y='Medida Númerica') + 
+#   theme_bw() + theme(legend.position = "none") + 
+#   scale_x_discrete(labels= niveis_x)
+# ggsave(paste0(analise,"_geral(boxplot e linha).png"), height=15, width=25, units="cm", dpi=600)
+
+###############################
+
+
+ggplot() +
+  #geom_point(data=fd, aes(x=as.factor(coluna), y=NUMS, color=as.factor(Grupo)), alpha=0.5, size=2.5, show.legend = F) + 
+  geom_boxplot(data=fd, aes(x=as.factor(coluna), y=NUMS, fill=as.factor(Grupo)), alpha=0.5, show.legend=T, color='black') +
+  #geom_line(data=fd, aes(x=as.factor(coluna), y=NUMS, color=as.factor(Grupo), group = ID), show.legend = F, alpha=0.4) +
+  theme_bw() + theme(legend.position = "bottom") + #bottom
+  labs(x=NULL, y=NULL, fill='Group') + 
+  scale_x_discrete(labels= c('PP','DPBI','DPAI','PPBI','PPAI')) +
+  scale_fill_discrete(labels= c('RMPT','RMFP','NRFP')) #+
+  #scale_x_discrete(labels= c('PP','DPAI','PPAI'))
+#ggsave(paste0(analise,"_por_grupo(boxplot).png"), height=15, width=25, units="cm", dpi=600)
+
+###############################
+
+ggplot(fd, aes(x = coluna, y = NUMS, color = Grupo)) +
+  geom_line(stat = "summary", fun.data = "mean_se", aes(group = Grupo)) +  # Assegura que 'group' está dentro de aes()
+  geom_errorbar(stat = "summary", fun.data = "mean_se", width = 0.25) +
+  geom_point(stat = "summary", fun.data = "mean_se", size = 3) +
+  theme_bw() + theme(legend.position = "bottom") + #bottom
+  labs(x=NULL, y=NULL, color='Group') + 
+  scale_x_discrete(labels= c('PP','DPBI','DPAI','PPBI','PPAI')) +
+  scale_color_discrete(labels= c('RMPT','RMFP','NRFP')) 
+  # só grupo A:
+  #labs(x=NULL, y=NULL, color=NULL) #+ 
+  #scale_x_discrete(labels= c('PP','DPAI','PPAI')) #+
+  #scale_y_continuous(limits = c(0, 20), breaks=seq(from=0, to=20, by=2))
+#ggsave(paste0(analise,"_por_grupo(ponto e linhas).png"), height=15, width=25, units="cm", dpi=600)
+
+###############################
+
+
+```
+
+```{r Teste e Posthoc pareado - não parametrico}
+lista = c('PEEP_ideal_A','PEEP_ideal_B','PEEP_ideal_C')
+# #################
+# lista = c("Driving_pressure_A",
+#           "Driving_pressure_antes_do_recrutamento_B",
+#           "Driving_pressure_B",
+#           "Driving_pressure_antes_do_recrutamento_C",
+#           "Driving_pressure_C")
+# #################
+# lista = c('Pressão_de_pico_A',
+# 'Pressão_de_Pico_antes_do_recrutamento_B',
+# 'Pressão_de_pico_B',
+# 'Pressão_de_Pico_antes_do_recrutamento_C',
+# 'Pressão_de_pico_C')
+# #################
+# lista = c('Complacência_estática_A',
+# 'Complacência_estática_pré_B',
+# 'Complacência_estática_B',
+# 'Complacência_estática_pré_C',
+# 'Complacência_estática_C')
+# #################
+# lista = c('Comlacência_dinâmica_A',
+# 'Comlacência_dinâmica_pré_B',
+# 'Comlacência_dinâmica_B',
+# 'Comlacência_dinâmica_pré_C',
+# 'Comlacência_dinâmica_C')
+
+######################################################################################################
+
+#for (grupo_escolhido in c('A','B','C')){
+grupo_escolhido = 'A'
+df_teste = df %>% filter(Grupo == grupo_escolhido)
+df_teste = df_teste[,lista]
+df_teste = na.omit(df_teste)
+df_teste = as.matrix(df_teste)
+friedman.test(df_teste)$p.value %>% retorne_p() %>% capture()
+#}
+
+#############
+library(PMCMRplus)
+
+rownames(df_teste) <- 1:nrow(df_teste)
+#colnames(df_teste) <- c("A","pre_B","B","pre_C","C")
+
+# Aplicar o teste de Nemenyi
+nemenyi_result = frdAllPairsNemenyiTest(df_teste)
+nemenyi_result = nemenyi_result$p.value
+nemenyi_result = nemenyi_result %>% as.data.frame()
+
+for (coluna in names(nemenyi_result)){
+  nemenyi_result = apply_retorne_p(nemenyi_result, coluna)
+}
+nemenyi_result %>% capture()
+
+```
+
+
+```{r ML}
+
+lista_vars = c("Driving_pressure_A",
+"Driving_pressure_antes_do_recrutamento_B",
+"Driving_pressure_B",
+"Driving_pressure_antes_do_recrutamento_C",
+"Driving_pressure_C")
+# #################
+# lista_vars = c('Pressão_de_pico_A',
+# 'Pressão_de_Pico_antes_do_recrutamento_B',
+# 'Pressão_de_pico_B',
+# 'Pressão_de_Pico_antes_do_recrutamento_C',
+# 'Pressão_de_pico_C')
+# #################
+# lista_vars = c('Complacência_estática_A',
+# 'Complacência_estática_pré_B',
+# 'Complacência_estática_B',
+# 'Complacência_estática_pré_C',
+# 'Complacência_estática_C')
+# #################
+# lista = c('Comlacência_dinâmica_A',
+# 'Comlacência_dinâmica_pré_B',
+# 'Comlacência_dinâmica_B',
+# 'Comlacência_dinâmica_pré_C',
+# 'Comlacência_dinâmica_C')
+
+df$Sujeito = 1:nrow(df)
+
+
+lista = append(c('Grupo','Sujeito'),lista_vars)
+
+# Transformando para o formato longo
+dados_long <- pivot_longer(df[,lista], cols = starts_with('D'), 
+                           names_to = "Momento", values_to = "Medida_numerica")
+
+# Ajustar o fator de momento
+#niveis = c('PP','DPBI','DPAI','PPBI','PPAI')
+niveis = c('A','pré B','B','pré C','C')
+dados_long$Momento <- factor(dados_long$Momento,
+                             labels=niveis)
+dados_long$Momento <- factor(dados_long$Momento,
+                             levels=niveis)
+
+dados_long$Sujeito = as.factor(dados_long$Sujeito)
+
+dados_long_BACKUP = dados_long
+###########################################################################################
+#library(lme4)
+library(lmerTest) # modelo misto
+library(multcomp) # anova
+library(miscTools) # lmer
+```
+
+```{r Função de avaliação de modelos}
+metrics_aval = function(modelo) {
+  # Previsões do modelo
+  predictions = predict(modelo)
+  
+  # MAE - Mean Absolute Error
+  MAE = mean(abs(dados_long$Medida_numerica - predictions)) %>% round(2)
+  
+  # MSE - Mean Squared Error
+  MSE = mean((dados_long$Medida_numerica - predictions)^2) %>% round(2)
+  
+  # RMSE - Root Mean Squared Error
+  RMSE = sqrt(MSE) %>% round(2)
+  
+  # MAPE - Mean Absolute Percentage Error
+  MAPE = mean(abs((dados_long$Medida_numerica - predictions) / dados_long$Medida_numerica)) * 100 %>% round(2)
+  MAPE = MAPE %>% round(2)
+  
+  # Retorna os resultados concatenados em uma string
+  return(paste("MAE:", MAE, "; MSE:", MSE, "; RMSE:", RMSE, "; MAPE:", MAPE))
+}
+```
+
+
+```{r}
+modelo0 <- lmer(Medida_numerica ~ Grupo + (1|Sujeito) + (1|Momento), data= dados_long, REML=F)
+modelo3 <- lmer(Medida_numerica ~ Grupo + (1|Sujeito), data= dados_long, REML=F)
+anova(modelo0, modelo3)
+metrics_aval(modelo3)
+metrics_aval(modelo0)
+
+modelo1 <- lmer(Medida_numerica ~ Grupo*Momento + (1|Sujeito) + (1|Momento), data= dados_long, REML=F)
+modelo4 <- lmer(Medida_numerica ~ Grupo*Momento + (1|Sujeito), data= dados_long, REML=F)
+anova(modelo1, modelo4)
+metrics_aval(modelo4)
+metrics_aval(modelo1)
+
+modelo2 <- lmer(Medida_numerica ~ Grupo+Momento + (1|Sujeito) + (1|Momento), data= dados_long, REML=F)
+modelo5 <- lmer(Medida_numerica ~ Grupo+Momento + (1|Sujeito), data= dados_long, REML=F)
+anova(modelo2, modelo5)
+metrics_aval(modelo5)
+metrics_aval(modelo2)
+
+X <- model.matrix(~ Grupo * Momento, data = dados_long)
+summary(glht(modelo4, linfct = X))
+
+```
+
+
+```{r}
+#dados_long = dados_long_BACKUP %>% filter(Grupo=='A')
+#dados_long = dados_long_BACKUP %>% filter(Grupo=='B')
+dados_long = dados_long_BACKUP %>% filter(Grupo=='C')
+#dados_long = dados_long_BACKUP
+
+#modelo0 <- lmer(Medida_numerica ~ Momento + (1|Sujeito) + (1|Momento), data= dados_long, REML=F)
+modelo3 <- lmer(Medida_numerica ~ Momento + (1|Sujeito), data= dados_long, REML=F)
+#anova(modelo0, modelo3)
+#metrics_aval(modelo3)
+#metrics_aval(modelo0)
+
+modelo_escolhido = modelo3
+
+#modelo_escolhido %>% summary()
+rep('..',20) %>% print()
+
+# Avaliação Geral
+anova(modelo_escolhido)
+rep('..',20) %>% print()
+
+# POST HOC
+post_hoc = summary(glht(modelo_escolhido, linfct = mcp(Momento = "Tukey", interaction_average=TRUE)))
+post_hoc_tab = post_hoc[["test"]]
+
+post_hoc_df <- data.frame(
+  Estimate = post_hoc_tab$coef %>% round(4),
+  Std.Error = post_hoc_tab$sigma %>% round(4),
+  Pr_z = post_hoc_tab$pvalues
+)
+
+post_hoc_df = apply_retorne_p(post_hoc_df,'Pr_z')
+post_hoc_df %>% capture()
+post_hoc
+```
+
+
+
+
+
+
+
+
+```{r}
+grupo_escolhido = 'C'
+# lista_vars = c("Driving_pressure_A",
+# "Driving_pressure_antes_do_recrutamento_B",
+# "Driving_pressure_B",
+# "Driving_pressure_antes_do_recrutamento_C",
+# "Driving_pressure_C")
+# #################
+# lista_vars = c('Pressão_de_pico_A',
+# 'Pressão_de_Pico_antes_do_recrutamento_B',
+# 'Pressão_de_pico_B',
+# 'Pressão_de_Pico_antes_do_recrutamento_C',
+# 'Pressão_de_pico_C')
+# #################
+lista_vars = c('Complacência_estática_A',
+'Complacência_estática_pré_B',
+'Complacência_estática_B',
+'Complacência_estática_pré_C',
+'Complacência_estática_C')
+# #################
+# lista = c('Comlacência_dinâmica_A',
+# 'Comlacência_dinâmica_pré_B',
+# 'Comlacência_dinâmica_B',
+# 'Comlacência_dinâmica_pré_C',
+# 'Comlacência_dinâmica_C')
+
+################################################################################################################
+
+df_teste = df# %>% filter(Grupo == grupo_escolhido)
+df_teste = df_teste[,lista_vars]
+df_teste = na.omit(df_teste)
+df_teste = as.matrix(df_teste)
+#friedman.test(df_teste)$p.value %>% retorne_p() %>% capture()
+#}
+#############
+rownames(df_teste) <- 1:nrow(df_teste)
+colnames(df_teste) <- c("A","pre_B","B","pre_C","C")
+
+# Aplicar o teste de Nemenyi
+nemenyi_result = frdAllPairsNemenyiTest(df_teste)
+nemenyi_result = nemenyi_result$p.value
+nemenyi_result = nemenyi_result %>% as.data.frame()
+
+for (coluna in names(nemenyi_result)){
+  nemenyi_result = apply_retorne_p(nemenyi_result, coluna)
+}
+
+nemenyi_result %>% capture()
+
+################################################################################################################
+
+df$Sujeito = 1:nrow(df)
+lista = append(c('Grupo','Sujeito'),lista_vars)
+
+# Transformando para o formato longo
+dados_long <- pivot_longer(df[,lista], cols = starts_with('C'), 
+                           names_to = "Momento", values_to = "Medida_numerica")
+
+niveis = c('A','pré B','B','pré C','C')
+dados_long$Momento <- factor(dados_long$Momento,
+                             labels=niveis)
+dados_long$Momento <- factor(dados_long$Momento,
+                             levels=niveis)
+dados_long$Sujeito = as.factor(dados_long$Sujeito)
+
+dados_long = dados_long# %>% filter(Grupo==grupo_escolhido)
+
+modelo_escolhido <- lmer(Medida_numerica ~ Momento + (1|Sujeito), data= dados_long, REML=F)
+
+# POST HOC
+post_hoc = summary(glht(modelo_escolhido, linfct = mcp(Momento = "Tukey", interaction_average=TRUE)))
+post_hoc_tab = post_hoc[["test"]]
+
+post_hoc_df <- data.frame(
+  Estimate = post_hoc_tab$coef %>% round(4),
+  Std.Error = post_hoc_tab$sigma %>% round(4),
+  Pr_z = post_hoc_tab$pvalues
+)
+post_hoc_df = apply_retorne_p(post_hoc_df,'Pr_z')
+post_hoc_df %>% capture()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#summary_numerico_parametrico(df, 'PEEP_ideal_A')
+#summary_numerico_parametrico(df, 'PEEP_ideal_B')
+#summary_numerico_parametrico(df, 'PEEP_ideal_C')
+
+#summary_numerico_por_grupo_n_parametrico(df, 'Platô_A', 'Grupo')
+#summary_numerico_por_grupo_n_parametrico(df, 'Pressão_de_Plato_antes_do_recrutamento_B', 'Grupo')
+#summary_numerico_por_grupo_n_parametrico(df, 'Platô_B', 'Grupo')
+#summary_numerico_por_grupo_n_parametrico(df, 'Pressão_de_Plato_antes_do_recrutamento_C', 'Grupo')
+#summary_numerico_por_grupo_n_parametrico(df, 'Platô_C', 'Grupo')
+
+#summary_numerico_por_grupo_n_parametrico(df, 'Pressão_de_Plato_antes_do_recrutamento_B', 'Grupo') %>% capture()
+#summary_numerico_por_grupo_n_parametrico(df, 'Pressão_de_Plato_antes_do_recrutamento_C', 'Grupo') %>% capture()
+
+#############################################################################
+
+# colunas = c('PEEP_ideal_A','PEEP_ideal_B','PEEP_ideal_C','Platô_A','Platô_B','Platô_C','Pressão_de_Plato_antes_do_recrutamento_B','Pressão_de_Plato_antes_do_recrutamento_C')
+# 
+# valores_p_pos_teste = data.frame(coluna= character(), A_B = character(), A_C = character(), B_C = character(), Test_Used = character())
+# 
+# df[c(colunas, 'Grupo')]
+# 
+# for (coluna in colunas){ #cols_signif
+#   # TESTE DE DUNN
+#   pos_teste = dunn.test(df[[coluna]], df$Grupo, method="bonferroni")
+#   tabela = pos_teste$P.adjusted
+#   p_ab = tabela[1] %>% retorne_p()
+#   p_bc = tabela[3] %>% retorne_p()
+#   p_ac = tabela[2] %>% retorne_p()
+# 
+#   valores_p_pos_teste[nrow(valores_p_pos_teste)+1,] = c(coluna, p_ab, p_ac, p_bc, 'Dunn')
+# }
+# valores_p_pos_teste %>% print() %>% capture()
+
+#############################################################################
+
+
+# conti(df, 'Grupo', 'Driving_pressure_B_13')
+# conti(df, 'Grupo', 'Driving_pressure_B_15')
+# conti(df, 'Grupo', 'Driving_pressure_antes_do_recrutamento_B_13')
+# conti(df, 'Grupo', 'Driving_pressure_antes_do_recrutamento_B_15')
+# 
+# 
+# conti(df, 'Grupo', 'Driving_pressure_C_13')
+# conti(df, 'Grupo', 'Driving_pressure_C_15')
+# conti(df, 'Grupo', 'Driving_pressure_antes_do_recrutamento_C_13')
+# conti(df, 'Grupo', 'Driving_pressure_antes_do_recrutamento_C_15')
+
+#############################################################################
+
+# cols_signif_cats = c('Driving_pressure_antes_do_recrutamento_B_13','Driving_pressure_antes_do_recrutamento_B_15')
+# 
+# valores_p_pos_teste = data.frame(coluna= character(), A_B = character(), A_C = character(), B_C = character())
+# 
+# for (coluna in cols_signif_cats){
+# 
+#   glm_model = glm(df[[coluna]] ~ Grupo, family = binomial, data = df)
+#   comp = glht(glm_model, linfct = mcp(Grupo = "Tukey"))
+#   tabela = summary(comp)
+#   #confint(comp)
+#   
+#   print(tabela)
+#   p_values = tabela[["test"]][["pvalues"]]
+#   p_ab = p_values[1] %>% retorne_p()
+#   p_ac = p_values[2] %>% retorne_p()
+#   p_bc = p_values[3] %>% retorne_p()
+#   
+#   valores_p_pos_teste[nrow(valores_p_pos_teste)+1,] = c(coluna, p_ab, p_ac, p_bc)
+# }
+# valores_p_pos_teste %>% capture()
+
+#############################################################################
+lista_vars = c('Platô_A',
+'Pressão_de_Plato_antes_do_recrutamento_B',
+'Platô_B',
+'Pressão_de_Plato_antes_do_recrutamento_C',
+'Platô_C')
+
+grupo_escolhido = 'A'
+
+df_teste = df %>% filter(Grupo == grupo_escolhido)
+df_teste = df_teste[,lista_vars]
+df_teste = na.omit(df_teste)
+df_teste = as.matrix(df_teste)
+friedman.test(df_teste)$p.value %>% retorne_p() #%>% capture()
+
+#############
+rownames(df_teste) <- 1:nrow(df_teste)
+colnames(df_teste) <- c("A","pre_B","B","pre_C","C")
+
+# Aplicar o teste de Nemenyi
+nemenyi_result = frdAllPairsNemenyiTest(df_teste)
+nemenyi_result = nemenyi_result$p.value
+nemenyi_result = nemenyi_result %>% as.data.frame()
+
+for (coluna in names(nemenyi_result)){
+  nemenyi_result = apply_retorne_p(nemenyi_result, coluna)
+}
+
+nemenyi_result %>% capture()
+
+```
+
+
+```{r}
+conti(df, 'Grupo', 'Driving_pressure_A_13')
+
+coluna_x = 'Grupo'
+
+coluna_y = 'Driving_pressure_A_13'
+grafi = df %>% filter(!is.na(!!sym(coluna_x)) & !is.na(!!sym(coluna_y))) %>% 
+    group_by(!!sym(coluna_y), !!sym(coluna_x)) %>% 
+    summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+coluna_y = 'Driving_pressure_A_15'
+grafi0 = df %>% filter(!is.na(!!sym(coluna_x)) & !is.na(!!sym(coluna_y))) %>% 
+    group_by(!!sym(coluna_y), !!sym(coluna_x)) %>% 
+    summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+grafi = rbind(grafi, grafi0)
+grafi
+
+ggplot(grafi, aes(x=as.factor(!!sym(coluna_y)), y=Freq, fill=as.factor(!!sym(coluna_x)))) + 
+  # Grafico
+  geom_bar(stat="identity", position=position_dodge(preserve = 'single'), color='black') +
+  # Outros
+  geom_text(aes(y=Freq + 3, label = sprintf("%0.1f%%", Freq)), position=position_dodge(0.75), vjust=-0.3) +
+  theme_bw() + theme(legend.position = "bottom") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(limits = c(0, 100), breaks=seq(from=0, to=100, by=10)) #+
+  #scale_x_discrete(labels= niveis_x) + scale_fill_discrete(labels= niveis_fill)
+
+```
+
+```{r}
+titulo = 'Driving Pressure A'
+
+grafi = df %>% group_by(Grupo) %>%
+  summarise(
+    PP = mean(Driving_pressure_A_13 == 1) * 100,
+    DPBI = mean(Driving_pressure_antes_do_recrutamento_B_13 == 1) * 100,
+    DPAI = mean(Driving_pressure_B_13 == 1) * 100,
+    PPBI = mean(Driving_pressure_antes_do_recrutamento_C_13 == 1) * 100,
+    PPAI = mean(Driving_pressure_C_13 == 1) * 100
+   ) %>%
+   pivot_longer(cols = c('PP','DPBI','DPAI','PPBI','PPAI'), names_to = "variable", values_to = "percentage")
+grafi
+
+ggplot(grafi, aes(x=variable, y=percentage, fill=Grupo)) + 
+  geom_bar(stat="identity", position=position_dodge(preserve = 'single'), color='black') +
+  geom_text(aes(y=percentage + 3, label = sprintf("%0.1f%%", percentage)), position=position_dodge(0.75), vjust=-0.3) +
+  theme_bw() + theme(legend.position = "bottom") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(limits = c(0, 100), breaks=seq(from=0, to=100, by=10)) +
+  labs(y='Percentage (%)', x=NULL, fill='Driving Pressure')
+#ggsave(paste0(titulo,".png"), height=15, width=20, units="cm", dpi= 600)
+
+```
+
+```{r}
+
+tab = df %>% group_by(Grupo, Driving_pressure_A_13) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab1 = df %>% group_by(Grupo, Driving_pressure_A_15) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab2 = df %>% group_by(Grupo, Driving_pressure_antes_do_recrutamento_B_13) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab3 = df %>% group_by(Grupo, Driving_pressure_antes_do_recrutamento_B_15) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab4 = df %>% group_by(Grupo, Driving_pressure_B_13) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab5 = df %>% group_by(Grupo, Driving_pressure_B_15) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab6 = df %>% group_by(Grupo, Driving_pressure_antes_do_recrutamento_C_13) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab7 = df %>% group_by(Grupo, Driving_pressure_antes_do_recrutamento_C_15) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab8 = df %>% group_by(Grupo, Driving_pressure_C_13) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+tab9 = df %>% group_by(Grupo, Driving_pressure_C_15) %>%
+  summarise(n = n()) %>% mutate(Freq = round(n/sum(n)*100, 2)) %>% ungroup()
+
+names(tab) [names(tab) == 'Driving_pressure_A_13'] = 'sep'
+tab$dado = 'Driving_pressure_A_13'
+
+names(tab1)[names(tab1)  == 'Driving_pressure_A_15'] = 'sep'
+tab1$dado = 'Driving_pressure_A_15'
+
+names(tab2)[names(tab2)  == 'Driving_pressure_antes_do_recrutamento_B_13'] = 'sep'
+tab2$dado = 'Driving_pressure_antes_do_recrutamento_B_13'
+
+names(tab3)[names(tab3)  == 'Driving_pressure_antes_do_recrutamento_B_15'] = 'sep'
+tab3$dado = 'Driving_pressure_antes_do_recrutamento_B_15'
+
+names(tab4)[names(tab4)  == 'Driving_pressure_B_13'] = 'sep'
+tab4$dado = 'Driving_pressure_B_13'
+
+names(tab5)[names(tab5)  == 'Driving_pressure_B_15'] = 'sep'
+tab5$dado = 'Driving_pressure_B_15'
+
+names(tab6)[names(tab6)  == 'Driving_pressure_antes_do_recrutamento_C_13'] = 'sep'
+tab6$dado = 'Driving_pressure_antes_do_recrutamento_C_13'
+
+names(tab7)[names(tab7)  == 'Driving_pressure_antes_do_recrutamento_C_15'] = 'sep'
+tab7$dado = 'Driving_pressure_antes_do_recrutamento_C_15'
+
+names(tab8)[names(tab8)  == 'Driving_pressure_C_13'] = 'sep'
+tab8$dado = 'Driving_pressure_C_13'
+
+names(tab9)[names(tab9)  == 'Driving_pressure_C_15'] = 'sep'
+tab9$dado = 'Driving_pressure_C_15'
+
+# GERAL
+#tab = rbind(tab,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9)
+
+# CORTE 13
+tab = rbind(tab,tab2,tab4,tab6,tab8)
+tab$dado = factor(tab$dado,
+                  levels=c("Driving_pressure_A_13",
+                           "Driving_pressure_antes_do_recrutamento_B_13",
+                           "Driving_pressure_B_13",
+                           "Driving_pressure_antes_do_recrutamento_C_13",
+                           "Driving_pressure_C_13"),
+                  labels= c('PP','DPBI','DPAI','PPBI','PPAI'))
+
+# CORTE 15
+# tab = rbind(tab1,tab3,tab5,tab7,tab9)
+# tab$dado = factor(tab$dado,
+#                   levels=c("Driving_pressure_A_15",
+#                            "Driving_pressure_antes_do_recrutamento_B_15",
+#                            "Driving_pressure_B_15",
+#                            "Driving_pressure_antes_do_recrutamento_C_15",
+#                            "Driving_pressure_C_15"),
+#                   labels= c('PP','DPBI','DPAI','PPBI','PPAI'))
+print('*')
+
+variavel_0 = 0.7
+tab$Grupo = factor(tab$Grupo, labels=c('RMPT','RMFP','NRFP'))
+tab = rbind(tab, c('RMPT','1',0,variavel_0,'PP'))
+tab = rbind(tab, c('RMFP','1',0,variavel_0,'PP'))
+tab = rbind(tab, c('RMPT','1',0,variavel_0,'PPBI'))
+tab = rbind(tab, c('RMPT','1',0,variavel_0,'PPAI'))
+tab = rbind(tab, c('RMFP','1',0,variavel_0,'PPAI'))
+tab$rotulo = tab$Freq
+tab$rotulo[tab$rotulo == variavel_0] = 0
+tab$rotulo = tab$rotulo %>% as.numeric()
+tab$Freq = tab$Freq %>% as.numeric()
+tab$n = tab$n %>% as.numeric()
+
+tab = tab %>% filter(sep == 1)
+tab
+
+
+# ggplot(tab, aes(x=as.factor(dado), y=Freq, fill=sep)) + 
+#   geom_bar(stat="identity", position=position_dodge(preserve = 'single'), color='black') +
+#   #geom_text(aes(y=Freq + 3, label = sprintf("%0.1f%%", Freq)), position=position_dodge(0.65), vjust=-0.3) +
+#   geom_text(aes(label = sprintf("%0.1f%%", Freq)), position = position_dodge(width = 0.9), vjust = -0.3) +
+#   scale_y_continuous(labels = scales::percent) + facet_grid(~Grupo) +
+#   scale_y_continuous(limits = c(0, 110), breaks=seq(from=0, to=100, by=10)) +
+#   labs(y='Percentage (%)', x=NULL, fill='Driving Pressure', title=titulo) +
+#   #scale_x_discrete(labels=c('13','15')) +
+#   #theme_minimal() +
+#   #theme_classic() + 
+#   #theme_void() +
+#   theme_bw() +
+#   scale_fill_discrete(labels=c('<','≥')) +
+#   theme(legend.position = "bottom")
+#ggsave(paste0('grafico_drivings_13_15_version_3',".jpeg"), height=10, width=17, units="cm", dpi= 600)
+
+titulo = 'driving_pressure_13'
+
+ggplot(tab, aes(x=dado, y=Freq, fill=Grupo)) + 
+  geom_bar(stat="identity", position=position_dodge(preserve = 'single'), color='black') +
+  #geom_text(aes(label = sprintf("%0.0f%%", rotulo)), position = position_dodge(width = 0.9), vjust = -0.3) +
+  scale_y_continuous(labels = scales::percent) + #facet_grid(~dado) +
+  scale_y_continuous(limits = c(0, 100), breaks=seq(from=0, to=100, by=10)) +
+  labs(y='Percentage (%)', x=NULL, fill=NULL) +
+  theme_bw() + theme(legend.position = "bottom")
+ggsave(paste0(titulo,"_sem_rotulo.png"), height=15, width=20, units="cm", dpi= 600)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# Definindo variáveis
+titulo <- 'Driving Pressure A'
+medida13 <- 'Driving_pressure_A_13'
+medida15 <- 'Driving_pressure_A_15'
+
+# Processamento dos dados
+grafi <- df %>%
+  group_by(Grupo) %>%
+  summarise(
+    Percent_13_1 = mean(!!sym(medida13) == 1) * 100,
+    Percent_15_1 = mean(!!sym(medida15) == 1) * 100,
+    Percent_13_0 = mean(!!sym(medida13) == 0) * 100,
+    Percent_15_0 = mean(!!sym(medida15) == 0) * 100
+  ) %>%
+  ungroup() %>%  # Assegura que não há agrupamento para evitar conflitos em tipos
+  mutate(across(everything(), as.numeric)) %>%  # Converte todas as colunas para numérico
+  pivot_longer(
+    cols = c(Percent_13_1, Percent_15_1, Percent_13_0, Percent_15_0), 
+    names_to = "variable", 
+    values_to = "percentage"
+  ) %>%
+  mutate(
+    variable = recode(variable,
+                      "Percent_13_1" = paste(medida13, "1"),
+                      "Percent_15_1" = paste(medida15, "1"),
+                      "Percent_13_0" = paste(medida13, "0"),
+                      "Percent_15_0" = paste(medida15, "0")
+    ),
+    condition = str_extract(variable, "1$|0$"),
+    variable = str_replace(variable, "1$|0$", ""),
+    condition = factor(condition, levels = c("1", "0"))
+  )
+
+#grafi$variable = as.factor(grafi$variable)
+grafi_backup = grafi %>% as.data.frame()
+grafi
+
+```
+
+```{r}
+ggplot(grafi, aes(x=as.factor(variable), y=percentage, fill=condition)) + 
+  geom_bar(stat="identity", position=position_dodge(preserve = 'single'), color='black') +
+  #geom_text(aes(y=percentage + 3, label = sprintf("%0.1f%%", percentage)), position=position_dodge(0.75), vjust=-0.3) +
+  theme_bw() + theme(legend.position = "bottom") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(limits = c(0, 100), breaks=seq(from=0, to=100, by=10)) +
+  labs(y='Percentage (%)', x=NULL, fill='Driving Pressure', title=titulo) #+
+  #scale_fill_discrete(labels=c('13','15')) + scale_x_discrete(labels=c('RMPT','RMFP','NRFP'))
+#ggsave(paste0(titulo,".png"), height=15, width=20, units="cm", dpi= 600)
+```
+```{r}
+grafi
+```
+
+
+```{r}
+grafi = grafi_backup %>% filter(variable == 'Driving_pressure_A_13')
+grafi
+
+# Criação do gráfico
+ggplot(grafi, aes(x = Grupo, y = percentage, fill = variable)) + 
+  geom_bar(stat = "identity", position = position_dodge(preserve = 'single'), color = 'black') #+
+  #geom_text(aes(label = sprintf("%0.1f%%", percentage), y = percentage + 3), position = position_dodge(width = 0.9), vjust = -0.3) +
+  #theme_bw() +
+  #theme(legend.position = "bottom") +
+  #scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10), labels = scales::percent_format()) +
+  #labs(y = 'Percentage (%)', title = titulo, fill = 'Condition') +
+  #scale_fill_brewer(palette = "Set1") 
+  #scale_x_discrete(labels = c('RMPT', 'RMFP', 'NRFP'))
+
+# Salvar o gráfico
+#ggsave(paste0(titulo, ".png"), height = 15, width = 20, units = "cm", dpi = 600)
+```
+
+
+
+```{r}
+
+conti(df, 'Grupo', 'Complicacao_pulmonar') %>% capture()
+
+
+```
+
+
+```{r}
+summary_numerico_por_grupo_parametrico(df, 'PEEP_ideal_A', 'Grupo') %>% capture()
+#summary_numerico_por_grupo_n_parametrico(df, 'PEEP_ideal_A', 'Grupo')
+
+summary_numerico_por_grupo_parametrico(df, 'PEEP_ideal_B', 'Grupo') %>% capture()
+#summary_numerico_por_grupo_n_parametrico(df, 'PEEP_ideal_B', 'Grupo')
+
+summary_numerico_por_grupo_parametrico(df, 'PEEP_ideal_C', 'Grupo') %>% capture()
+#summary_numerico_por_grupo_n_parametrico(df, 'PEEP_ideal_C', 'Grupo')
+```
+
+
+
+
+
+
+
+
+
